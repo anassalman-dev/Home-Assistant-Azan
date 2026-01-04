@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Media Upload</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+    input[type=file] { display:block; margin-bottom: 1rem; }
+    .links { margin-top: 1rem; }
+    .link { margin-bottom: 0.5rem; word-break: break-all; }
+    .preview { margin-top: 1rem; }
+    .preview img, .preview video, .preview audio { max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Uploader des fichiers (image, audio, video)</h1>
+
+  <form id="uploadForm">
+    <input type="file" id="fileInput" name="file" accept="image/*,audio/*,video/*" />
+    <button type="submit">Uploader</button>
+  </form>
+
+  <form id="multiForm">
+    <input type="file" id="multiInput" name="files" accept="image/*,audio/*,video/*" multiple />
+    <button type="submit">Uploader plusieurs</button>
+  </form>
+
+  <div class="links" id="links"></div>
+  <div class="preview" id="preview"></div>
+
+  <script>
+    const base = '';
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert('Choisissez un fichier');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(base + '/upload', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.error) return alert('Erreur: ' + json.error);
+      addLink(json.url);
+      showPreview(json);
+    });
+
+    document.getElementById('multiForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const files = document.getElementById('multiInput').files;
+      if (!files.length) return alert('Choisissez des fichiers');
+      const fd = new FormData();
+      for (const f of files) fd.append('files', f);
+      const res = await fetch(base + '/upload-multiple', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.error) return alert('Erreur: ' + json.error);
+      if (json.files) json.files.forEach(f => { addLink(f.url); showPreview(f); });
+    });
+
+    function addLink(url) {
+      const container = document.getElementById('links');
+      const div = document.createElement('div');
+      div.className = 'link';
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.textContent = url;
+      div.appendChild(a);
+      container.prepend(div);
+    }
+
+    function showPreview(file) {
+      const p = document.getElementById('preview');
+      const url = file.url;
+      const mimetype = file.mimetype || '';
+      if (mimetype.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = url;
+        p.prepend(img);
+      } else if (mimetype.startsWith('video/')) {
+        const v = document.createElement('video');
+        v.src = url;
+        v.controls = true;
+        p.prepend(v);
+      } else if (mimetype.startsWith('audio/')) {
+        const a = document.createElement('audio');
+        a.src = url;
+        a.controls = true;
+        p.prepend(a);
+      }
+    }
+  </script>
+</body>
+</html>
