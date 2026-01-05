@@ -464,13 +464,30 @@
           body: formData
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-          showToast('Erreur: ' + data.error, 'error');
+        // Parser le JSON (le serveur devrait toujours retourner du JSON)
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          // Si le parsing JSON échoue, c'est une erreur inattendue
+          showToast(`Erreur ${response.status}: Réponse invalide du serveur (${e.message})`, 'error');
           return;
         }
 
+        // Si la réponse n'est pas OK, afficher l'erreur du serveur
+        if (!response.ok) {
+          const errorMessage = data.error || `Erreur ${response.status}: ${response.statusText}`;
+          showToast(errorMessage, 'error');
+          return;
+        }
+
+        // Vérifier si le serveur a retourné une erreur dans les données
+        if (data.error) {
+          showToast(data.error, 'error');
+          return;
+        }
+
+        // Succès : afficher le fichier
         showToast('Fichier uploadé avec succès!', 'success');
         addFileCard(data);
       } catch (error) {
@@ -493,16 +510,35 @@
           body: formData
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-          showToast('Erreur: ' + data.error, 'error');
+        // Parser le JSON (le serveur devrait toujours retourner du JSON)
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          // Si le parsing JSON échoue, c'est une erreur inattendue
+          showToast(`Erreur ${response.status}: Réponse invalide du serveur (${e.message})`, 'error');
           return;
         }
 
-        if (data.files) {
+        // Si la réponse n'est pas OK, afficher l'erreur du serveur
+        if (!response.ok) {
+          const errorMessage = data.error || `Erreur ${response.status}: ${response.statusText}`;
+          showToast(errorMessage, 'error');
+          return;
+        }
+
+        // Vérifier si le serveur a retourné une erreur dans les données
+        if (data.error) {
+          showToast(data.error, 'error');
+          return;
+        }
+
+        // Succès : afficher les fichiers
+        if (data.files && data.files.length > 0) {
           showToast(`${data.files.length} fichier(s) uploadé(s) avec succès!`, 'success');
           data.files.forEach(file => addFileCard(file));
+        } else {
+          showToast('Aucun fichier reçu du serveur', 'error');
         }
       } catch (error) {
         showToast('Erreur lors de l\'upload: ' + error.message, 'error');
