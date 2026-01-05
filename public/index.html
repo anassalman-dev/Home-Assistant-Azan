@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explorateur de fichiers</title>
+    <title>Explorateur GitHub</title>
     <style>
         * {
             margin: 0;
@@ -11,144 +11,315 @@
             box-sizing: border-box;
         }
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
             padding: 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
         }
         h1 {
-            color: #333;
+            color: #58a6ff;
             margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 28px;
         }
-        .path {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 4px;
+        .input-group {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 6px;
             margin-bottom: 20px;
-            font-family: monospace;
+            border: 1px solid #30363d;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
             font-size: 14px;
         }
-        .file-list {
-            list-style: none;
+        input:focus {
+            outline: none;
+            border-color: #58a6ff;
         }
-        .file-item {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
+        button {
+            padding: 12px 24px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
             transition: background 0.2s;
         }
+        button:hover {
+            background: #2ea043;
+        }
+        button:disabled {
+            background: #6e7681;
+            cursor: not-allowed;
+        }
+        .breadcrumb {
+            background: #161b22;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #30363d;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .breadcrumb span {
+            color: #58a6ff;
+            cursor: pointer;
+        }
+        .breadcrumb span:hover {
+            text-decoration: underline;
+        }
+        .file-list {
+            background: #161b22;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+        }
+        .file-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #21262d;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
         .file-item:hover {
-            background: #f8f9fa;
+            background: #0d1117;
         }
         .icon {
-            margin-right: 10px;
-            font-size: 20px;
-        }
-        .folder {
-            color: #ffd700;
-        }
-        .file {
-            color: #6c757d;
+            margin-right: 12px;
+            font-size: 18px;
         }
         .name {
             flex: 1;
-            color: #333;
+            color: #58a6ff;
+            font-size: 14px;
+        }
+        .file-item[data-type="file"] .name {
+            color: #c9d1d9;
         }
         .size {
-            color: #6c757d;
-            font-size: 14px;
+            color: #8b949e;
+            font-size: 12px;
             margin-right: 20px;
         }
-        .error {
-            color: #dc3545;
-            padding: 20px;
-            background: #f8d7da;
-            border-radius: 4px;
-            margin-top: 20px;
-        }
-        .loading {
+        .loading, .error, .empty {
             text-align: center;
             padding: 40px;
-            color: #6c757d;
+            color: #8b949e;
+        }
+        .error {
+            color: #f85149;
+        }
+        .info {
+            background: #161b22;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #8b949e;
+            border: 1px solid #30363d;
+        }
+        .example {
+            color: #58a6ff;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📁 Explorateur de fichiers</h1>
-        <div class="path" id="currentPath">Chargement...</div>
-        <ul class="file-list" id="fileList">
-            <li class="loading">Chargement des fichiers...</li>
-        </ul>
+        <h1>🐙 Explorateur de fichiers GitHub</h1>
+        
+        <div class="input-group">
+            <div class="input-row">
+                <input type="text" id="repoUrl" placeholder="Collez l'URL du dépôt GitHub ici..." value="https://github.com/anassalman-dev/Home-Assistant-Azan">
+                <button id="loadBtn" onclick="loadFromUrl()">📂 Charger</button>
+            </div>
+            <div class="example">Exemple : https://github.com/microsoft/vscode</div>
+        </div>
+
+        <div id="breadcrumb" class="breadcrumb" style="display: none;"></div>
+        
+        <div class="file-list" id="fileList">
+            <div class="empty">👆 Cliquez sur "Charger" pour explorer le dépôt</div>
+        </div>
+
+        <div class="info">
+            💡 <strong>Astuce :</strong> Cliquez sur les dossiers pour naviguer. Cliquez sur les fichiers pour les ouvrir sur GitHub.
+        </div>
     </div>
 
     <script>
-        async function loadFiles() {
-            const fileList = document.getElementById('fileList');
-            const pathElement = document.getElementById('currentPath');
+        let currentPath = '';
+        let currentOwner = '';
+        let currentRepo = '';
+        let currentBranch = 'main';
+
+        function formatSize(bytes) {
+            if (!bytes) return '-';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            if (!currentPath) {
+                breadcrumb.style.display = 'none';
+                return;
+            }
+            
+            breadcrumb.style.display = 'flex';
+            const parts = currentPath.split('/').filter(p => p);
+            let html = `<span onclick="navigateTo('')">📁 ${currentRepo}</span>`;
+            
+            let path = '';
+            parts.forEach((part, index) => {
+                path += (path ? '/' : '') + part;
+                const thisPath = path;
+                html += ` / <span onclick="navigateTo('${thisPath}')">${part}</span>`;
+            });
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        function navigateTo(path) {
+            currentPath = path;
+            loadFiles();
+        }
+
+        function parseGithubUrl(url) {
+            // Nettoyer l'URL
+            url = url.trim().replace(/\/$/, '');
+            
+            // Extraire le propriétaire et le dépôt
+            const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+            if (!match) {
+                throw new Error('URL GitHub invalide');
+            }
+            
+            return {
+                owner: match[1],
+                repo: match[2].replace('.git', '')
+            };
+        }
+
+        async function loadFromUrl() {
+            const urlInput = document.getElementById('repoUrl').value;
             
             try {
-                const response = await fetch('.');
-                const html = await response.text();
+                const parsed = parseGithubUrl(urlInput);
+                currentOwner = parsed.owner;
+                currentRepo = parsed.repo;
+                currentPath = '';
+                currentBranch = 'main';
                 
-                // Parser le HTML pour extraire les liens
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const links = doc.querySelectorAll('a');
+                loadFiles();
+            } catch (error) {
+                alert('❌ ' + error.message + '\n\nExemple d\'URL valide:\nhttps://github.com/microsoft/vscode');
+            }
+        }
+
+        async function loadFiles() {
+            const fileList = document.getElementById('fileList');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            fileList.innerHTML = '<div class="loading">⏳ Chargement...</div>';
+            loadBtn.disabled = true;
+            updateBreadcrumb();
+            
+            try {
+                const path = currentPath ? `/${currentPath}` : '';
+                const url = `https://api.github.com/repos/${currentOwner}/${currentRepo}/contents${path}?ref=${currentBranch}`;
                 
-                fileList.innerHTML = '';
-                pathElement.textContent = window.location.pathname || '/';
+                const response = await fetch(url);
                 
-                if (links.length === 0) {
-                    fileList.innerHTML = '<li class="file-item">Aucun fichier trouvé ou listing désactivé sur le serveur</li>';
-                    return;
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('Dépôt ou chemin introuvable. Vérifiez l\'URL.');
+                    } else if (response.status === 403) {
+                        throw new Error('Limite de l\'API atteinte (60 requêtes/heure). Attendez un peu.');
+                    }
+                    throw new Error(`Erreur ${response.status}`);
                 }
                 
-                links.forEach(link => {
-                    const href = link.getAttribute('href');
-                    const name = link.textContent.trim();
-                    
-                    // Ignorer les liens parent et vides
-                    if (!href || href === '../' || name === '') return;
-                    
-                    const li = document.createElement('li');
-                    li.className = 'file-item';
-                    
-                    const isFolder = href.endsWith('/');
-                    const icon = isFolder ? '📁' : '📄';
-                    
-                    li.innerHTML = `
-                        <span class="icon ${isFolder ? 'folder' : 'file'}">${icon}</span>
-                        <span class="name">${name}</span>
-                    `;
-                    
-                    fileList.appendChild(li);
+                const data = await response.json();
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('Ce chemin ne pointe pas vers un dossier');
+                }
+                
+                fileList.innerHTML = '';
+                
+                // Trier : dossiers d'abord, puis fichiers
+                const sorted = data.sort((a, b) => {
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
                 });
                 
-                if (fileList.children.length === 0) {
-                    fileList.innerHTML = '<li class="file-item">Répertoire vide</li>';
+                sorted.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.setAttribute('data-type', item.type);
+                    
+                    const icon = item.type === 'dir' ? '📁' : '📄';
+                    
+                    div.innerHTML = `
+                        <span class="icon">${icon}</span>
+                        <span class="name">${item.name}</span>
+                        <span class="size">${formatSize(item.size)}</span>
+                    `;
+                    
+                    if (item.type === 'dir') {
+                        div.onclick = () => {
+                            currentPath = item.path;
+                            loadFiles();
+                        };
+                    } else {
+                        div.onclick = () => {
+                            window.open(item.html_url, '_blank');
+                        };
+                    }
+                    
+                    fileList.appendChild(div);
+                });
+                
+                if (sorted.length === 0) {
+                    fileList.innerHTML = '<div class="empty">📭 Dossier vide</div>';
                 }
                 
             } catch (error) {
-                fileList.innerHTML = `
-                    <li class="error">
-                        <strong>Erreur:</strong> Impossible de lire le contenu du répertoire.<br>
-                        Le serveur doit avoir le "directory listing" activé pour que cette page fonctionne.
-                    </li>
-                `;
+                fileList.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            } finally {
+                loadBtn.disabled = false;
             }
         }
-        
-        loadFiles();
+
+        // Charger automatiquement au démarrage
+        window.onload = () => {
+            loadFromUrl();
+        };
     </script>
 </body>
 </html>
