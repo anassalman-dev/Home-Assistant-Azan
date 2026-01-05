@@ -78,8 +78,19 @@ app.post('/upload-multiple', upload.array('files', 20), (req, res) => {
 // Simple health check
 app.get('/ping', (req, res) => res.send('ok'));
 
+// Error handler (must be after all routes)
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error('Error:', err);
+  
+  // Multer errors
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Fichier trop volumineux' });
+    }
+    return res.status(400).json({ error: err.message || 'Erreur d\'upload' });
+  }
+  
+  // Other errors
   res.status(400).json({ error: err.message || 'Erreur' });
 });
 
