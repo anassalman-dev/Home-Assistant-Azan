@@ -441,77 +441,42 @@
             updateBreadcrumb();
             
             try {
-                const url = currentPath ? `./${currentPath}/` : './';
-                const response = await fetch(url);
+                // Utiliser l'API Vercel serverless
+                const response = await fetch(`/api/files?path=${encodeURIComponent(currentPath)}`);
                 
                 if (!response.ok) {
                     throw new Error('Impossible de charger le contenu');
                 }
                 
-                const html = await response.text();
+                const data = await response.json();
                 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const links = doc.querySelectorAll('a');
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur de chargement');
+                }
                 
                 fileList.innerHTML = '';
                 
-                if (links.length === 0) {
-                    fileList.innerHTML = `
-                        <div class="error">
-                            ⚠️ Le listing des répertoires n'est pas activé sur ce serveur
-                            <br><br>
-                            <strong>Pour activer :</strong><br>
-                            • <strong>Apache</strong> : Créez un fichier .htaccess avec :<br>
-                            <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">Options +Indexes</code>
-                            <br><br>
-                            • <strong>Nginx</strong> : Ajoutez dans la config :<br>
-                            <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">autoindex on;</code>
-                            <br><br>
-                            • <strong>Hébergement partagé</strong> : Contactez votre hébergeur
-                        </div>
-                    `;
-                    return;
-                }
+                const items = data.items;
                 
-                const items = [];
-                
-                links.forEach(link => {
-                    const href = link.getAttribute('href');
-                    let name = link.textContent.trim();
-                    
-                    if (!href || href === '../' || href === '.' || name === '' || href.startsWith('http') || href.startsWith('//')) return;
-                    
-                    const isFolder = href.endsWith('/');
-                    
-                    if (isFolder) {
-                        name = name.replace(/\/$/, '');
-                    }
-                    
-                    items.push({
-                        name: name,
-                        href: href,
-                        isFolder: isFolder
-                    });
-                });
-                
+                // Trier : dossiers d'abord, puis fichiers
                 items.sort((a, b) => {
-                    if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
-                    return a.isFolder ? -1 : 1;
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
                 });
                 
                 items.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'file-item';
                     
-                    const emoji = getFileIcon(item.name, item.isFolder);
+                    const isFolder = item.type === 'dir';
+                    const emoji = getFileIcon(item.name, isFolder);
                     const fileUrl = getFileUrl(item.name);
                     
                     div.innerHTML = `
-                        <div class="icon ${item.isFolder ? 'folder' : 'file'}" ${item.isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${emoji}</div>
-                        <span class="name" ${item.isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${item.name}</span>
+                        <div class="icon ${isFolder ? 'folder' : 'file'}" ${isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${emoji}</div>
+                        <span class="name" ${isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${item.name}</span>
                         <div class="actions">
-                            ${!item.isFolder ? `
+                            ${!isFolder ? `
                                 <button class="btn btn-copy" onclick="event.stopPropagation(); copyToClipboard('${fileUrl}', this)">
                                     Copier le lien
                                 </button>
@@ -532,9 +497,9 @@
             } catch (error) {
                 fileList.innerHTML = `
                     <div class="error">
-                        ❌ Erreur : ${error.message}
+                        ❌ ${error.message}
                         <br><br>
-                        Assurez-vous que le listing des répertoires est activé sur votre serveur.
+                        Assurez-vous que l'API est bien configurée et que vos fichiers sont dans le dossier /public
                     </div>
                 `;
             }
