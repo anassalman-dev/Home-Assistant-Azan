@@ -1,649 +1,154 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Media Storage - Upload de fichiers</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #818cf8;
-      --success: #10b981;
-      --error: #ef4444;
-      --gray-50: #f9fafb;
-      --gray-100: #f3f4f6;
-      --gray-200: #e5e7eb;
-      --gray-300: #d1d5db;
-      --gray-600: #4b5563;
-      --gray-700: #374151;
-      --gray-800: #1f2937;
-      --gray-900: #111827;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 2rem 1rem;
-      color: var(--gray-900);
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      text-align: center;
-      color: white;
-      margin-bottom: 3rem;
-      animation: fadeInDown 0.6s ease-out;
-    }
-
-    .header h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .header p {
-      font-size: 1.25rem;
-      opacity: 0.95;
-    }
-
-    .upload-section {
-      background: white;
-      border-radius: 1rem;
-      padding: 3rem 2rem;
-      box-shadow: var(--shadow-lg);
-      margin-bottom: 2rem;
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    .upload-zone {
-      border: 3px dashed var(--gray-300);
-      border-radius: 1rem;
-      padding: 4rem 2rem;
-      text-align: center;
-      background: var(--gray-50);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .upload-zone:hover {
-      border-color: var(--primary);
-      background: var(--gray-100);
-    }
-
-    .upload-zone.dragover {
-      border-color: var(--primary);
-      background: var(--primary-light);
-      background-opacity: 0.1;
-      transform: scale(1.02);
-    }
-
-    .upload-zone-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      display: block;
-    }
-
-    .upload-zone h2 {
-      font-size: 1.5rem;
-      color: var(--gray-800);
-      margin-bottom: 0.5rem;
-    }
-
-    .upload-zone p {
-      color: var(--gray-600);
-      margin-bottom: 1rem;
-    }
-
-    .upload-zone-input {
-      display: none;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 0.75rem 2rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .files-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .file-card {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    .file-card:hover {
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-4px);
-    }
-
-    .file-preview {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-      background: var(--gray-100);
-    }
-
-    .file-preview video,
-    .file-preview audio {
-      width: 100%;
-    }
-
-    .file-info {
-      margin-bottom: 1rem;
-    }
-
-    .file-name {
-      font-weight: 600;
-      color: var(--gray-800);
-      margin-bottom: 0.5rem;
-      word-break: break-word;
-      font-size: 0.9rem;
-    }
-
-    .file-meta {
-      font-size: 0.875rem;
-      color: var(--gray-600);
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-
-    .file-url {
-      background: var(--gray-50);
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      font-size: 0.8rem;
-      word-break: break-all;
-      color: var(--gray-700);
-      margin-bottom: 1rem;
-      font-family: 'Courier New', monospace;
-    }
-
-    .file-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-sm {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-    }
-
-    .btn-secondary {
-      background: var(--gray-200);
-      color: var(--gray-800);
-    }
-
-    .btn-secondary:hover {
-      background: var(--gray-300);
-    }
-
-    .btn-success {
-      background: var(--success);
-    }
-
-    .btn-success:hover {
-      background: #059669;
-    }
-
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 0.8s linear infinite;
-      margin-right: 0.5rem;
-    }
-
-    .toast {
-      position: fixed;
-      top: 2rem;
-      right: 2rem;
-      background: white;
-      padding: 1rem 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: var(--shadow-lg);
-      z-index: 1000;
-      animation: slideInRight 0.3s ease-out;
-      max-width: 400px;
-    }
-
-    .toast.error {
-      border-left: 4px solid var(--error);
-    }
-
-    .toast.success {
-      border-left: 4px solid var(--success);
-    }
-
-    .toast-message {
-      font-weight: 500;
-      color: var(--gray-800);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: var(--gray-600);
-    }
-
-    .empty-state-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      opacity: 0.5;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes slideInRight {
-      from {
-        opacity: 0;
-        transform: translateX(100px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .header h1 {
-        font-size: 2rem;
-      }
-
-      .header p {
-        font-size: 1rem;
-      }
-
-      .upload-section {
-        padding: 2rem 1.5rem;
-      }
-
-      .upload-zone {
-        padding: 3rem 1.5rem;
-      }
-
-      .files-list {
-        grid-template-columns: 1fr;
-      }
-
-      .toast {
-        right: 1rem;
-        left: 1rem;
-        max-width: none;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorateur de fichiers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .path {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .file-list {
+            list-style: none;
+        }
+        .file-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+        .icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        .folder {
+            color: #ffd700;
+        }
+        .file {
+            color: #6c757d;
+        }
+        .name {
+            flex: 1;
+            color: #333;
+        }
+        .size {
+            color: #6c757d;
+            font-size: 14px;
+            margin-right: 20px;
+        }
+        .error {
+            color: #dc3545;
+            padding: 20px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <h1>📁 Media Storage</h1>
-      <p>Partagez vos fichiers multimédias en toute simplicité</p>
-    </header>
+    <div class="container">
+        <h1>📁 Explorateur de fichiers</h1>
+        <div class="path" id="currentPath">Chargement...</div>
+        <ul class="file-list" id="fileList">
+            <li class="loading">Chargement des fichiers...</li>
+        </ul>
+    </div>
 
-    <section class="upload-section">
-      <div class="upload-zone" id="uploadZone">
-        <span class="upload-zone-icon">☁️</span>
-        <h2>Glissez-déposez vos fichiers ici</h2>
-        <p>ou cliquez pour sélectionner</p>
-        <input type="file" id="fileInput" class="upload-zone-input" accept="image/*,audio/*,video/*" multiple />
-        <button class="btn" onclick="document.getElementById('fileInput').click()">
-          Choisir des fichiers
-        </button>
-        <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--gray-600);">
-          Images, audio et vidéos jusqu'à 500MB
-        </p>
-      </div>
-    </section>
-
-    <section id="filesSection" style="display: none;">
-      <h2 style="color: white; margin-bottom: 1.5rem; font-size: 1.5rem;">Fichiers uploadés</h2>
-      <div class="files-list" id="filesList"></div>
-    </section>
-  </div>
-
-  <script>
-    const base = '';
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-    const filesList = document.getElementById('filesList');
-    const filesSection = document.getElementById('filesSection');
-
-    // Drag & Drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      uploadZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      uploadZone.addEventListener(eventName, () => {
-        uploadZone.classList.add('dragover');
-      }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      uploadZone.addEventListener(eventName, () => {
-        uploadZone.classList.remove('dragover');
-      }, false);
-    });
-
-    uploadZone.addEventListener('drop', handleDrop, false);
-
-    function handleDrop(e) {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      handleFiles(files);
-    }
-
-    fileInput.addEventListener('change', (e) => {
-      handleFiles(e.target.files);
-    });
-
-    async function handleFiles(files) {
-      if (files.length === 0) return;
-
-      const fileArray = Array.from(files);
-      
-      if (fileArray.length === 1) {
-        await uploadSingleFile(fileArray[0]);
-      } else {
-        await uploadMultipleFiles(fileArray);
-      }
-
-      // Réinitialiser l'input
-      fileInput.value = '';
-    }
-
-    async function uploadSingleFile(file) {
-      showLoading(true);
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch(base + '/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        // Parser le JSON (le serveur devrait toujours retourner du JSON)
-        let data;
-        try {
-          data = await response.json();
-        } catch (e) {
-          // Si le parsing JSON échoue, c'est une erreur inattendue
-          showToast(`Erreur ${response.status}: Réponse invalide du serveur (${e.message})`, 'error');
-          return;
+    <script>
+        async function loadFiles() {
+            const fileList = document.getElementById('fileList');
+            const pathElement = document.getElementById('currentPath');
+            
+            try {
+                const response = await fetch('.');
+                const html = await response.text();
+                
+                // Parser le HTML pour extraire les liens
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = doc.querySelectorAll('a');
+                
+                fileList.innerHTML = '';
+                pathElement.textContent = window.location.pathname || '/';
+                
+                if (links.length === 0) {
+                    fileList.innerHTML = '<li class="file-item">Aucun fichier trouvé ou listing désactivé sur le serveur</li>';
+                    return;
+                }
+                
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    const name = link.textContent.trim();
+                    
+                    // Ignorer les liens parent et vides
+                    if (!href || href === '../' || name === '') return;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'file-item';
+                    
+                    const isFolder = href.endsWith('/');
+                    const icon = isFolder ? '📁' : '📄';
+                    
+                    li.innerHTML = `
+                        <span class="icon ${isFolder ? 'folder' : 'file'}">${icon}</span>
+                        <span class="name">${name}</span>
+                    `;
+                    
+                    fileList.appendChild(li);
+                });
+                
+                if (fileList.children.length === 0) {
+                    fileList.innerHTML = '<li class="file-item">Répertoire vide</li>';
+                }
+                
+            } catch (error) {
+                fileList.innerHTML = `
+                    <li class="error">
+                        <strong>Erreur:</strong> Impossible de lire le contenu du répertoire.<br>
+                        Le serveur doit avoir le "directory listing" activé pour que cette page fonctionne.
+                    </li>
+                `;
+            }
         }
-
-        // Si la réponse n'est pas OK, afficher l'erreur du serveur
-        if (!response.ok) {
-          const errorMessage = data.error || `Erreur ${response.status}: ${response.statusText}`;
-          showToast(errorMessage, 'error');
-          return;
-        }
-
-        // Vérifier si le serveur a retourné une erreur dans les données
-        if (data.error) {
-          showToast(data.error, 'error');
-          return;
-        }
-
-        // Succès : afficher le fichier
-        showToast('Fichier uploadé avec succès!', 'success');
-        addFileCard(data);
-      } catch (error) {
-        showToast('Erreur lors de l\'upload: ' + error.message, 'error');
-      } finally {
-        showLoading(false);
-      }
-    }
-
-    async function uploadMultipleFiles(files) {
-      showLoading(true);
-      try {
-        const formData = new FormData();
-        files.forEach(file => {
-          formData.append('files', file);
-        });
-
-        const response = await fetch(base + '/upload-multiple', {
-          method: 'POST',
-          body: formData
-        });
-
-        // Parser le JSON (le serveur devrait toujours retourner du JSON)
-        let data;
-        try {
-          data = await response.json();
-        } catch (e) {
-          // Si le parsing JSON échoue, c'est une erreur inattendue
-          showToast(`Erreur ${response.status}: Réponse invalide du serveur (${e.message})`, 'error');
-          return;
-        }
-
-        // Si la réponse n'est pas OK, afficher l'erreur du serveur
-        if (!response.ok) {
-          const errorMessage = data.error || `Erreur ${response.status}: ${response.statusText}`;
-          showToast(errorMessage, 'error');
-          return;
-        }
-
-        // Vérifier si le serveur a retourné une erreur dans les données
-        if (data.error) {
-          showToast(data.error, 'error');
-          return;
-        }
-
-        // Succès : afficher les fichiers
-        if (data.files && data.files.length > 0) {
-          showToast(`${data.files.length} fichier(s) uploadé(s) avec succès!`, 'success');
-          data.files.forEach(file => addFileCard(file));
-        } else {
-          showToast('Aucun fichier reçu du serveur', 'error');
-        }
-      } catch (error) {
-        showToast('Erreur lors de l\'upload: ' + error.message, 'error');
-      } finally {
-        showLoading(false);
-      }
-    }
-
-    function addFileCard(file) {
-      filesSection.style.display = 'block';
-
-      const card = document.createElement('div');
-      card.className = 'file-card';
-
-      const mimetype = file.mimetype || '';
-      const isImage = mimetype.startsWith('image/');
-      const isVideo = mimetype.startsWith('video/');
-      const isAudio = mimetype.startsWith('audio/');
-
-      let previewHTML = '';
-      if (isImage) {
-        previewHTML = `<img src="${file.url}" alt="${file.originalname}" class="file-preview" />`;
-      } else if (isVideo) {
-        previewHTML = `<video src="${file.url}" controls class="file-preview"></video>`;
-      } else if (isAudio) {
-        previewHTML = `<audio src="${file.url}" controls class="file-preview" style="width: 100%;"></audio>`;
-      } else {
-        previewHTML = `<div class="file-preview" style="display: flex; align-items: center; justify-content: center; font-size: 3rem;">📄</div>`;
-      }
-
-      card.innerHTML = `
-        ${previewHTML}
-        <div class="file-info">
-          <div class="file-name">${escapeHtml(file.originalname)}</div>
-          <div class="file-meta">
-            <span>${formatFileSize(file.size)}</span>
-            <span>${mimetype.split('/')[0]}</span>
-          </div>
-        </div>
-        <div class="file-url">${file.url}</div>
-        <div class="file-actions">
-          <button class="btn btn-sm btn-success" onclick="copyToClipboard('${file.url}', this)">
-            📋 Copier l'URL
-          </button>
-          <a href="${file.url}" target="_blank" class="btn btn-sm btn-secondary">
-            🔗 Ouvrir
-          </a>
-        </div>
-      `;
-
-      filesList.insertBefore(card, filesList.firstChild);
-    }
-
-    function copyToClipboard(text, button) {
-      navigator.clipboard.writeText(text).then(() => {
-        const originalText = button.innerHTML;
-        button.innerHTML = '✓ Copié!';
-        button.style.background = 'var(--success)';
-        setTimeout(() => {
-          button.innerHTML = originalText;
-          button.style.background = '';
-        }, 2000);
-      }).catch(err => {
-        showToast('Erreur lors de la copie', 'error');
-      });
-    }
-
-    function formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function showLoading(show) {
-      const btn = uploadZone.querySelector('.btn');
-      if (show) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading"></span>Upload en cours...';
-      } else {
-        btn.disabled = false;
-        btn.innerHTML = 'Choisir des fichiers';
-      }
-    }
-
-    function showToast(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `<div class="toast-message">${escapeHtml(message)}</div>`;
-      
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-  </script>
+        
+        loadFiles();
+    </script>
 </body>
 </html>
