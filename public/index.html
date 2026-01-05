@@ -441,59 +441,37 @@
             updateBreadcrumb();
             
             try {
-                const url = currentPath ? `./${currentPath}/` : './';
-                const response = await fetch(url);
-                const html = await response.text();
+                // Utiliser le script PHP backend
+                const response = await fetch(`files.php?path=${encodeURIComponent(currentPath)}`);
+                const data = await response.json();
                 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const links = doc.querySelectorAll('a');
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur de chargement');
+                }
                 
                 fileList.innerHTML = '';
                 
-                if (links.length === 0) {
-                    fileList.innerHTML = '<div class="error">Le listing des répertoires n\'est pas activé<br><br>Activez "Options +Indexes" (Apache) ou "autoindex on" (Nginx)</div>';
-                    return;
-                }
+                const items = data.items;
                 
-                const items = [];
-                
-                links.forEach(link => {
-                    const href = link.getAttribute('href');
-                    let name = link.textContent.trim();
-                    
-                    if (!href || href === '../' || href === '.' || name === '' || href.startsWith('http') || href.startsWith('//')) return;
-                    
-                    const isFolder = href.endsWith('/');
-                    
-                    if (isFolder) {
-                        name = name.replace(/\/$/, '');
-                    }
-                    
-                    items.push({
-                        name: name,
-                        href: href,
-                        isFolder: isFolder
-                    });
-                });
-                
+                // Trier : dossiers d'abord, puis fichiers
                 items.sort((a, b) => {
-                    if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
-                    return a.isFolder ? -1 : 1;
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
                 });
                 
                 items.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'file-item';
                     
-                    const emoji = getFileIcon(item.name, item.isFolder);
+                    const isFolder = item.type === 'dir';
+                    const emoji = getFileIcon(item.name, isFolder);
                     const fileUrl = getFileUrl(item.name);
                     
                     div.innerHTML = `
-                        <div class="icon ${item.isFolder ? 'folder' : 'file'}" ${item.isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${emoji}</div>
-                        <span class="name" ${item.isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${item.name}</span>
+                        <div class="icon ${isFolder ? 'folder' : 'file'}" ${isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${emoji}</div>
+                        <span class="name" ${isFolder ? `onclick="navigateToFolder('${item.name}')"` : ''}>${item.name}</span>
                         <div class="actions">
-                            ${!item.isFolder ? `
+                            ${!isFolder ? `
                                 <button class="btn btn-copy" onclick="event.stopPropagation(); copyToClipboard('${fileUrl}', this)">
                                     Copier le lien
                                 </button>
@@ -512,7 +490,7 @@
                 }
                 
             } catch (error) {
-                fileList.innerHTML = `<div class="error">${error.message}</div>`;
+                fileList.innerHTML = `<div class="error">${error.message}<br><br>Assurez-vous que le fichier files.php est présent sur le serveur</div>`;
             }
         }
 
